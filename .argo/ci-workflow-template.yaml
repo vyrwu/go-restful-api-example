@@ -1,0 +1,109 @@
+# .argo/ci-workflow-template.yaml
+
+# The WorkflowTemplate resource that defines our reusable CI/CD pipeline.
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: go-restful-api-ci-template
+  namespace: argo
+spec:
+  entrypoint: ci-pipeline
+  arguments:
+    parameters:
+      - name: commit_sha
+        value: main # A default value for manual runs
+
+  templates:
+    - name: ci-pipeline
+      inputs:
+        artifacts:
+          - name: repo
+            git:
+              repo: https://github.com/vyrwu/go-restful-api-example.git
+              revision: "{{workflow.parameters.commit_sha}}"
+      steps:
+        - - name: lint-and-test
+            template: lint-test-scan
+            arguments:
+              artifacts:
+                - name: repo
+                  from: "{{inputs.artifacts.repo}}"
+        - - name: build-and-push
+            template: build-push
+            arguments:
+              artifacts:
+                - name: repo
+                  from: "{{inputs.artifacts.repo}}"
+        - - name: update-manifest
+            template: update-manifest
+            arguments:
+              artifacts:
+                - name: repo
+                  from: "{{inputs.artifacts.repo}}"
+
+    # This template runs the linting, testing, and scanning steps.
+    - name: lint-test-scan
+      inputs:
+        artifacts:
+          - name: repo
+            path: /src
+      container:
+        image: golang:1.25
+        command: [sh, -c]
+        args: ["make deps && make ci"]
+        workingDir: /src
+
+    # This template builds the Docker image and loads it into the kind cluster.
+    - name: build-push
+      inputs:
+        artifacts:
+          - name: repo
+            path: /src
+      container:
+        image: docker:20.10.17
+        command: [sh, -c]
+        args:
+          - |
+            COMMIT_SHA=$(git rev-parse --short HEAD)
+            make build-and-load COMMIT_SHA=$COMMIT_SHA
+        volumeMounts:
+          - name: docker-sock
+            mountPath: /var/run/docker.sock
+      workingDir: /src
+
+    # This template updates the Kubernetes manifest with the new image tag and pushes the change back to Git.
+    - name: update-manifest
+      inputs:
+        artifacts:
+          - name: repo
+            path: /src
+      container:
+        image: alpine/git
+        command: [sh, -c]
+        args:
+          - |
+            COMMIT_SHA=$(git rev-parse --short HEAD)
+            sed -i "s/image: go-restful-api-example:.*/image: go-restful-api-example:$COMMIT_SHA/" k8s/deployment.yaml
+            git config --global user.email "ci@example.com"
+            git config --global user.name "CI Bot"
+            GIT_PAT=$(cat /etc/git-credentials/token)
+            git remote set-url origin https://oauth2:$GIT_PAT@github.com/vyrwu/go-restful-api-example.git
+            git add k8s/deployment.yaml
+            git commit -m "Update image tag to $COMMIT_SHA [skip ci]"
+            git push
+        volumeMounts:
+          - name: git-credentials
+            mountPath: /etc/git-credentials
+            readOnly: true
+      workingDir: /src
+
+  # Volumes provide a way to share data between steps in the workflow.
+  volumes:
+    # The 'docker-sock' volume mounts the Docker socket from the host, allowing us to build images.
+    - name: docker-sock
+      hostPath:
+        path: /var/run/docker.sock
+    # The 'git-credentials' volume mounts the GitHub PAT from a Kubernetes secret.
+    - name: git-credentials
+      secret:
+        secretName: github-pat

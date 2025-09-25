@@ -1,0 +1,138 @@
+basePath: /
+definitions:
+  main.Gopher:
+    properties:
+      id:
+        example: "1"
+        type: string
+      name:
+        example: Gopher
+        type: string
+    type: object
+host: localhost:8000
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is a sample server for a Go Restful API example.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Go Restful API Example
+  version: "1.1"
+paths:
+  /gophers:
+    get:
+      description: Get all gophers
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/main.Gopher'
+            type: array
+      summary: Get all gophers
+      tags:
+      - Gophers
+    post:
+      consumes:
+      - application/json
+      description: Create a new gopher
+      parameters:
+      - description: Gopher to create
+        in: body
+        name: gopher
+        required: true
+        schema:
+          $ref: '#/definitions/main.Gopher'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/main.Gopher'
+      summary: Create a new gopher
+      tags:
+      - Gophers
+  /gophers/{id}:
+    delete:
+      description: Delete a gopher
+      parameters:
+      - description: Gopher ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      summary: Delete a gopher
+      tags:
+      - Gophers
+    get:
+      description: Get a gopher by ID
+      parameters:
+      - description: Gopher ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.Gopher'
+      summary: Get a gopher by ID
+      tags:
+      - Gophers
+    put:
+      consumes:
+      - application/json
+      description: Update a gopher
+      parameters:
+      - description: Gopher ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Gopher to update
+        in: body
+        name: gopher
+        required: true
+        schema:
+          $ref: '#/definitions/main.Gopher'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.Gopher'
+      summary: Update a gopher
+      tags:
+      - Gophers
+  /health:
+    get:
+      consumes:
+      - application/json
+      description: Check Health.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Check health
+      tags:
+      - Probes
+swagger: "2.0"

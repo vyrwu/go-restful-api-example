@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: go-restful-api-example
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/vyrwu/go-restful-api-example.git # TODO: Replace with your fork's URL
+    targetRevision: HEAD
+    path: k8s
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: go-restful-api
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

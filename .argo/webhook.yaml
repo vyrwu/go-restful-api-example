@@ -1,0 +1,117 @@
+# .argo/webhook.yaml
+
+# 1. EventBus: The transport layer for events in Argo Events.
+# This 'default' EventBus uses NATS Streaming to pass events from EventSources to Sensors.
+apiVersion: argoproj.io/v1alpha1
+kind: EventBus
+metadata:
+  name: default
+  namespace: argo-events
+spec:
+  nats:
+    native:
+      replicas: 3
+---
+# 2. EventSource: Listens for external events.
+# This EventSource is configured to receive webhooks from a specific GitHub repository.
+apiVersion: argoproj.io/v1alpha1
+kind: EventSource
+metadata:
+  name: github-webhook
+  namespace: argo-events
+spec:
+  service:
+    ports:
+      - port: 12000
+        targetPort: 12000
+  github:
+    example:
+      repositories:
+        - owner: vyrwu # TODO: Replace with your GitHub username
+          names:
+            - go-restful-api-example
+      webhook:
+        endpoint: /push
+        port: "12000"
+        method: POST
+        url: http://localhost # This will be exposed via a port-forward
+      events:
+        - "push"
+      apiToken:
+        name: github-webhook-secret
+        key: secret
+      insecure: true
+      active: true
+      contentType: json
+---
+# 3. Sensor: Defines the logic for what to do when an event is received.
+# This Sensor listens for events from the 'github-webhook' EventSource and triggers an Argo Workflow in response.
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: github-webhook
+  namespace: argo-events
+spec:
+  dependencies:
+    - name: github-event
+      eventSourceName: github-webhook
+      eventName: example
+  triggers:
+    - template:
+        name: github-workflow-trigger
+        argoWorkflow:
+          group: argoproj.io
+          version: v1alpha1
+          resource: workflows
+          operation: submit
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: go-restful-api-ci-
+                namespace: argo
+              spec:
+                workflowTemplateRef:
+                  name: go-restful-api-ci-template
+                arguments:
+                  parameters:
+                    - name: commit_sha
+                      value: "placeholder"
+          parameters:
+            - src:
+                dependencyName: github-event
+                dataKey: body.head_commit.id
+              dest: spec.arguments.parameters.0.value
+---
+# 4. Role: Defines permissions for a ServiceAccount.
+# This Role grants the permission to 'create' Argo Workflows in the 'argo' namespace.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: submit-workflows
+  namespace: argo
+rules:
+  - apiGroups: ["argoproj.io"]
+    resources: ["workflows"]
+    verbs: ["create"]
+  - apiGroups: ["argoproj.io"]
+    resources: ["workflowtemplates"]
+    verbs: ["get"]
+---
+# 5. RoleBinding: Connects a Role to a ServiceAccount.
+# This RoleBinding grants the 'submit-workflows' Role to the 'default' ServiceAccount in the 'argo-events' namespace,
+# allowing the Sensor to trigger our CI/CD pipeline.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sensor-can-submit-workflows
+  namespace: argo
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: argo-events
+roleRef:
+  kind: Role
+  name: submit-workflows
+  apiGroup: rbac.authorization.k8s.io

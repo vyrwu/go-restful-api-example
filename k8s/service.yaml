@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: go-restful-api-example
+  namespace: go-restful-api
+spec:
+  selector:
+    app: go-restful-api-example
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000

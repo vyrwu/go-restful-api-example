@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: go-restful-api-example
+  namespace: go-restful-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: go-restful-api-example
+  template:
+    metadata:
+      labels:
+        app: go-restful-api-example
+    spec:
+      containers:
+      - name: go-restful-api-example
+        image: go-restful-api-example:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000

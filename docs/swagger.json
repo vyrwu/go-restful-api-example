@@ -1,0 +1,207 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "This is a sample server for a Go Restful API example.",
+        "title": "Go Restful API Example",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "url": "http://www.swagger.io/support",
+            "email": "support@swagger.io"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "1.1"
+    },
+    "host": "localhost:8000",
+    "basePath": "/",
+    "paths": {
+        "/gophers": {
+            "get": {
+                "description": "Get all gophers",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Gophers"
+                ],
+                "summary": "Get all gophers",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/main.Gopher"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a new gopher",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Gophers"
+                ],
+                "summary": "Create a new gopher",
+                "parameters": [
+                    {
+                        "description": "Gopher to create",
+                        "name": "gopher",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.Gopher"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/main.Gopher"
+                        }
+                    }
+                }
+            }
+        },
+        "/gophers/{id}": {
+            "get": {
+                "description": "Get a gopher by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Gophers"
+                ],
+                "summary": "Get a gopher by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Gopher ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/main.Gopher"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a gopher",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Gophers"
+                ],
+                "summary": "Update a gopher",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Gopher ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Gopher to update",
+                        "name": "gopher",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.Gopher"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/main.Gopher"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a gopher",
+                "tags": [
+                    "Gophers"
+                ],
+                "summary": "Delete a gopher",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Gopher ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "description": "Check Health.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Probes"
+                ],
+                "summary": "Check health",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "main.Gopher": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "1"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Gopher"
+                }
+            }
+        }
+    }
+}
